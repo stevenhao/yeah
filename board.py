@@ -20,36 +20,39 @@ class Board:
 
         board[i][j] = self.turn
 
-        self._elim_pieces()
+        self._elim_pieces(i, j)
         self.turn = 2 if self.turn == 1 else 1
         return True
 
-    def _elim_pieces(self):
+    def _elim_pieces(self, i, j):
         if self.turn == 1:
-            self._elim_pieces_player(2)
-            self._elim_pieces_player(1)
+            self._elim_pieces_player(2, i, j, True)
+            self._elim_pieces_player(1, i, j, False)
         else:
-            self._elim_pieces_player(1)
-            self._elim_pieces_player(2)
+            self._elim_pieces_player(1, i, j, True)
+            self._elim_pieces_player(2, i, j, False)
 
-    def _elim_pieces_player(self, player):
+    def _elim_pieces_player(self, player, i0, j0, check_adj):
         board = self.board
         width = len(board)
 
         checked = [[False for i in range(width)] for j in range(width)]
 
         to_eliminate = []
-        for i in range(width):
-            for j in range(width):
-                if checked[i][j]:
-                    continue
-                if board[i][j] != player:
-                    checked[i][j] = True
-                    continue
+        check_squares = [(0,1), (0,-1), (-1, 0), (1, 0)] if check_adj else [(0,0)]
+        for di,dj in check_squares:
+            i,j = (i0+di, j0+dj)
+            if not (0 <= i < self.size) or not (0 <= j < self.size):
+                continue
+            if checked[i][j]:
+                continue
+            if board[i][j] != player:
+                checked[i][j] = True
+                continue
 
-                newly_checked = []
-                if not self._elim_pieces_floodfill(i, j, checked, player, False, newly_checked):
-                    to_eliminate.extend(newly_checked)
+            newly_checked = []
+            if not self._elim_pieces_floodfill(i, j, checked, player, False, newly_checked):
+                to_eliminate.extend(newly_checked)
         for i, j in to_eliminate:
             board[i][j] = 0
 
@@ -70,8 +73,8 @@ class Board:
         newly_checked.append((i, j))
         checked[i][j] = True
         found_liberty = False
-        for dx, dy in [(-1, 0), (1,0), (0, -1), (0, 1)]:
-            new_i, new_j = (i + dx, j + dy)
+        for di, dj in [(-1, 0), (1,0), (0, -1), (0, 1)]:
+            new_i, new_j = (i + di, j + dj)
             found_new_liberty = self._elim_pieces_floodfill(
                 new_i, new_j, checked, player, has_liberty, newly_checked)
             found_liberty = found_new_liberty or found_liberty
