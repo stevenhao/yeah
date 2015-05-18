@@ -9,7 +9,7 @@ class BoardGuiTk(tk.Frame):
         return (self.columns * self.square_size,
                 self.rows * self.square_size)
 
-    def __init__(self, parent, board, square_size=64):
+    def __init__(self, parent, board, square_size=64, min_square_size=30):
         self.board = board
         self.rows = len(board.board)
         self.columns = len(board.board)
@@ -18,11 +18,12 @@ class BoardGuiTk(tk.Frame):
 
         self.icons = {}
 
+        min_canvas_width, min_canvas_height = self.rows * min_square_size, self.columns * min_square_size
         canvas_width, canvas_height = self.canvas_size
 
         tk.Frame.__init__(self, parent)
 
-        self.canvas = tk.Canvas(self, width=canvas_width, height=canvas_height, background="grey")
+        self.canvas = tk.Canvas(self, width=min_canvas_width, height=min_canvas_height, background="grey")
         self.canvas.pack(side="top", fill="both", anchor="c", expand=True)
 
         self.canvas.bind("<Configure>", self.refresh)
@@ -32,12 +33,15 @@ class BoardGuiTk(tk.Frame):
         self.button_quit = tk.Button(self.statusbar, text="New", fg="black", command=self.reset)
         self.button_quit.pack(side=tk.LEFT, in_=self.statusbar)
 
+        self.button_save = tk.Button(self.statusbar, text="Save", fg="black", command=self.reset)
+        self.button_save.pack(side=tk.LEFT, in_=self.statusbar)
+
         self.label_status = tk.Label(self.statusbar, text="   White's turn  ", fg="black")
         self.label_status.pack(side=tk.LEFT, expand=0, in_=self.statusbar)
 
         self.button_quit = tk.Button(self.statusbar, text="Quit", fg="black", command=self.parent.destroy)
         self.button_quit.pack(side=tk.RIGHT, in_=self.statusbar)
-        self.statusbar.pack(expand=False, fill="x", side='bottom')
+        self.statusbar.pack(expand=False, fill="both", side='bottom')
 
 
     def click(self, event):
@@ -50,32 +54,32 @@ class BoardGuiTk(tk.Frame):
     def addpiece(self, name, image, row=0, column=0): # draws piece
         '''Add a piece to the playing board'''
         x0 = (column * self.square_size) + int(self.square_size/2)
-        y0 = ((7-row) * self.square_size) + int(self.square_size/2)
+        y0 = (row * self.square_size) + int(self.square_size/2)
         self.canvas.create_image(x0,y0, image=image, tags=(name, "piece"), anchor="c")
 
     def refresh(self, event={}):
 
         '''Redraw the board'''
         if event:
-            xsize = int((event.width) / (self.columns + 1))
-            ysize = int((event.height) / (self.rows + 1))
+            xsize = int((event.width) / (self.columns))
+            ysize = int((event.height-30) / (self.rows))
             self.square_size = min(xsize, ysize)
 
 
         self.canvas.delete("square")
         self.canvas.delete("bg")
         margin = self.square_size / 2
-        marginx = (event.width - self.rows * self.square_size) / 2
-        marginy = (event.height - self.rows * self.square_size) / 2   
-        #self.canvas.create_rectangle(marginx - margin, marginy - margin, marginx + self.rows*self.square_size + margin, marginy + self.columns*self.square_size + margin,
-        #                             fill=self.bgcolor, width=0, tags="bg")     
-        for row in range(self.rows):
-            for col in range(self.columns):
+        marginx = (event.width - (self.rows - 1) * self.square_size) / 2
+        marginy = (event.height - (self.columns - 1) * self.square_size) / 2   
+        self.canvas.create_rectangle(marginx - margin, marginy - margin, marginx + (self.rows-1)*self.square_size + margin, marginy + (self.columns-1)*self.square_size + margin,
+                                     fill=self.bgcolor, width=0, tags="bg")     
+        for row in range(self.rows - 1):
+            for col in range(self.columns - 1):
                 x1 = (col * self.square_size) + marginx
-                y1 = ((self.rows-1-row) * self.square_size) + marginy
+                y1 = (row * self.square_size) + marginy
                 x2 = x1 + self.square_size
                 y2 = y1 + self.square_size
-                #self.canvas.create_rectangle(x1, y1, x2, y2, outline="black", tags="square", width=2)
+                self.canvas.create_rectangle(x1, y1, x2, y2, outline="black", tags="square", width=2)
 
         self.draw_pieces()
         self.canvas.tag_raise("piece")
