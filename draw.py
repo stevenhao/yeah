@@ -1,17 +1,16 @@
 import Tkinter as tk
 
 class BoardGuiTk(tk.Frame):
-    rows = 8
-    columns = 8
+    rows = 11
+    columns = 11
 
-    color1 = "white"
-    color2 = "grey"
+    bgcolor = "yellow"
     @property
     def canvas_size(self):
         return (self.columns * self.square_size,
                 self.rows * self.square_size)
 
-    def __init__(self, parent, square_size=64):
+    def __init__(self, parent, square_size=20):
         self.square_size = square_size
         self.parent = parent
 
@@ -53,26 +52,47 @@ class BoardGuiTk(tk.Frame):
         self.canvas.coords(name, x0, y0)
 
     def refresh(self, event={}):
+
         '''Redraw the board'''
         if event:
-            xsize = int((event.width-1) / self.columns)
-            ysize = int((event.height-1) / self.rows)
+            xsize = int((event.width) / (self.columns + 1))
+            ysize = int((event.height) / (self.rows + 1))
             self.square_size = min(xsize, ysize)
 
+
         self.canvas.delete("square")
-        color = self.color2
+        self.canvas.delete("bg")
+        margin = self.square_size / 2
+        marginx = (event.width - self.rows * self.square_size) / 2
+        marginy = (event.height - self.rows * self.square_size) / 2   
+        self.canvas.create_rectangle(marginx - margin, marginy - margin, marginx + self.rows*self.square_size + margin, marginy + self.columns*self.square_size + margin,
+                                     fill=self.bgcolor, width=0, tags="bg")     
         for row in range(self.rows):
-            color = self.color1 if color == self.color2 else self.color2
             for col in range(self.columns):
-                x1 = (col * self.square_size)
-                y1 = ((7-row) * self.square_size)
+                x1 = (col * self.square_size) + marginx
+                y1 = ((self.rows-1-row) * self.square_size) + marginy
                 x2 = x1 + self.square_size
                 y2 = y1 + self.square_size
-                self.canvas.create_rectangle(x1, y1, x2, y2, outline="black", fill=color, tags="square")
-                color = self.color1 if color == self.color2 else self.color2
+                self.canvas.create_rectangle(x1, y1, x2, y2, outline="black", tags="square", width=2)
+
         self.canvas.tag_raise("piece")
         self.canvas.tag_lower("square")
+        self.canvas.tag_lower("bg")
+    
+    def draw_pieces(self):
+        self.canvas.delete("piece")
+        for coord, piece in self.chessboard.iteritems():
+            x,y = self.chessboard.number_notation(coord)
+            if piece is not None:
+                filename = "img/%s%s.png" % (piece.color, piece.abbriviation.lower())
+                piecename = "%s%s%s" % (piece.abbriviation, x, y)
 
+                if(filename not in self.icons):
+                    self.icons[filename] = ImageTk.PhotoImage(file=filename, width=32, height=32)
+
+                self.addpiece(piecename, self.icons[filename], x, y)
+                self.placepiece(piecename, x, y)
+  
     def reset(self):
         self.chessboard.load(board.FEN_STARTING)
         self.refresh()
