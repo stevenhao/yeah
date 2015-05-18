@@ -76,29 +76,4 @@ class Board:
 
 
 
-board = Board(5)
-board.place_piece(1,0)
-board.place_piece(1,1)
-board.place_piece(0,1)
-board.place_piece(1,2)
-board.place_piece(0,2)
-board.place_piece(4,1)
-board.place_piece(2,1)
-board.place_piece(4,2) #player 2
-board.place_piece(2,2) #player 1
-board.place_piece(4,0) #player 2
-board.place_piece(1,4) #player 1
-# board.place_piece(0,3) #player 2
-# board.place_piece(2,3) #player 1
-# board.place_piece(0,4) #player 2
-# board.place_piece(3,2) #player 1
-
-print board.turn
-for row in board.board:
-    print row
-
-
-
-
-
 
