@@ -1,6 +1,5 @@
 import Tkinter as tk
 import board
-from PIL import ImageTk
 
 class BoardGuiTk(tk.Frame):
     bgcolor = "yellow"
