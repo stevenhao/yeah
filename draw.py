@@ -28,6 +28,8 @@ class BoardGuiTk(tk.Frame):
         self.canvas.bind("<Configure>", self._refresh)
         self.canvas.bind("<Button-1>", self._mouse_click)
         self.canvas.bind("<Motion>", self._mouse_move)
+        self.canvas.bind("<Enter>", self._mouse_enter)
+        self.canvas.bind("<Leave>", self._mouse_leave)
 
         self.statusbar = tk.Frame(self, height=64)
 
@@ -41,13 +43,38 @@ class BoardGuiTk(tk.Frame):
         self.button_quit.pack(side=tk.RIGHT, in_=self.statusbar)
         self.statusbar.pack(expand=False, fill="both", side='bottom')
 
+    def _mouse_leave(self, event):
+        self.hover = None
+        self._refresh()
+
+    def _mouse_enter(self, event):
+        self.parent.grab_set()
+        self.cnt = 0
+
+    def _mouse_move(self, event):
+        i, j = self._gridLoc(event.x, event.y)
+
+        if self.board.in_bounds(i, j) and not self.board.get(i, j):
+            self.hover = i, j
+        else:
+            self.hover = None
+        self._draw_hover()
+
+    def _mouse_click(self, event):
+        if not self.parent.focus_get():
+            return
+        i, j = self._gridLoc(event.x, event.y)
+
+        if self.board.place_piece(i, j):
+            self.hover = None
+            self._refresh()
+
     def _compute_star_points(self):
         size = self.board.size
         if size == 19:
             return [(i, j) for i in [3, 9, 15] for j in [3, 9, 15]]
 
-        corner_offset = 3 # for 19, 3
-        # for 11, 2
+        corner_offset = 3
 
         rows, columns = self.rows, self.columns
         row_coordinates = [corner_offset, rows - 1 - corner_offset]
@@ -67,28 +94,13 @@ class BoardGuiTk(tk.Frame):
     def _gridLoc(self, x, y):
         i = float(y - self.marginy)/self.square_size
         j = float(x - self.marginx)/self.square_size
-        return int(i + .5), int(j + .5)
+        
+        return int(round(i)), int(round(j))
 
-    def _mouse_move(self, event):
-        i, j = self._gridLoc(event.x, event.y)
-
-        if self.board.in_bounds(i, j) and not self.board.get(i, j):
-            self.hover = i, j
-        else:
-            self.hover = None
-        self._draw_hover()
-
-    def _mouse_click(self, event):
-        i, j = self._gridLoc(event.x, event.y)
-
-        if self.board.place_piece(i, j):
-            self._draw_pieces()
-            self.hover = None
-            self._draw_hover()
         
     def _refresh(self, event={}):
         if event:
-            xsize = int((event.width) / (self.columns))
+            xsize = int((event.width-30) / (self.columns))
             ysize = int((event.height-30) / (self.rows))
             self.width = event.width
             self.height = event.height

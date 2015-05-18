@@ -3,7 +3,7 @@ class Board:
     def __init__(self, size):
         self.size = size
         self.board = [[0 for i in range(size)] for j in range(size)]
-        self.turn = 1
+        self.turn = 2
 
     def get(self, i, j):
         return self.board[i][j]
