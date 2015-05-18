@@ -1,35 +1,42 @@
 class Board:
 
-    def __init__(self, width):
-        self.board = [[0 for _ in range(width)] for __ in range(width)]
+    def __init__(self, size):
+        self.size = size
+        self.board = [[0 for i in range(size)] for j in range(size)]
         self.turn = 1
 
-    def place_piece(self, pos_x, pos_y):
+    def get(self, i, j):
+        return self.board[i][j]
+
+    def in_bounds(self, i, j):
+        return 0 <= i < self.size and 0 <= j < self.size
+
+    def place_piece(self, i, j):
         board = self.board
-        if (not 0 <= pos_x < len(board)) or (not 0 <= pos_y < len(board)):
+        if not self.in_bounds(i, j):
             return False
-        if board[pos_x][pos_y] != 0:
+        if board[i][j] != 0:
             return False
 
-        board[pos_x][pos_y] = self.turn
+        board[i][j] = self.turn
 
-        self.elim_pieces()
+        self._elim_pieces()
         self.turn = 2 if self.turn == 1 else 1
         return True
 
-    def elim_pieces(self):
+    def _elim_pieces(self):
         if self.turn == 1:
-            self.elim_pieces_player(2)
-            self.elim_pieces_player(1)
+            self._elim_pieces_player(2)
+            self._elim_pieces_player(1)
         else:
-            self.elim_pieces_player(1)
-            self.elim_pieces_player(2)
+            self._elim_pieces_player(1)
+            self._elim_pieces_player(2)
 
-    def elim_pieces_player(self, player):
+    def _elim_pieces_player(self, player):
         board = self.board
         width = len(board)
 
-        checked = [[False for _ in range(width)] for __ in range(width)]
+        checked = [[False for i in range(width)] for j in range(width)]
 
         to_eliminate = []
         for i in range(width):
@@ -41,32 +48,32 @@ class Board:
                     continue
 
                 newly_checked = []
-                if not self.elim_pieces_floodfill(i,j,checked,player,False,newly_checked):
+                if not self._elim_pieces_floodfill(i, j, checked, player, False, newly_checked):
                     to_eliminate.extend(newly_checked)
-        for i,j in to_eliminate:
+        for i, j in to_eliminate:
             board[i][j] = 0
 
-    def elim_pieces_floodfill(self, pos_x, pos_y, checked, player, has_liberty, newly_checked):
+    def _elim_pieces_floodfill(self, i, j, checked, player, has_liberty, newly_checked):
         board = self.board
-        width = len(board)
 
-        if (not 0 <= pos_x < len(board)) or (not 0 <= pos_y < len(board)):
+        if not self.in_bounds(i, j):
             return False
 
-        if board[pos_x][pos_y] == 0:
+        if board[i][j] == 0:
             return True
-        elif board[pos_x][pos_y] != player:
+        elif board[i][j] != player:
             return False
 
-        if checked[pos_x][pos_y]:
+        if checked[i][j]:
             return False
 
-        newly_checked.append((pos_x, pos_y))
-        checked[pos_x][pos_y] = True
+        newly_checked.append((i, j))
+        checked[i][j] = True
         found_liberty = False
-        for i,j in [(-1, 0), (1,0), (0, -1), (0, 1)]:
-            new_x, new_y = (pos_x + i, pos_y + j)
-            found_new_liberty = self.elim_pieces_floodfill(new_x, new_y, checked, player, has_liberty, newly_checked)
+        for dx, dy in [(-1, 0), (1,0), (0, -1), (0, 1)]:
+            new_i, new_j = (i + dx, j + dy)
+            found_new_liberty = self._elim_pieces_floodfill(
+                new_i, new_j, checked, player, has_liberty, newly_checked)
             found_liberty = found_new_liberty or found_liberty
         if has_liberty or found_liberty:
             return True
