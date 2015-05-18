@@ -1,16 +1,16 @@
 import Tkinter as tk
 
 class BoardGuiTk(tk.Frame):
-    rows = 11
-    columns = 11
-
     bgcolor = "yellow"
     @property
     def canvas_size(self):
         return (self.columns * self.square_size,
                 self.rows * self.square_size)
 
-    def __init__(self, parent, square_size=20):
+    def __init__(self, parent, square_size=64, board):
+        self.board = board
+        self.rows = board.width
+        self.columns = board.width
         self.square_size = square_size
         self.parent = parent
 
@@ -99,11 +99,11 @@ class BoardGuiTk(tk.Frame):
         self.draw_pieces()
         self.refresh()
 
-def display():
+def display(board):
     root = tk.Tk()
     root.title("Simple Python Chess")
 
-    gui = BoardGuiTk(root)
+    gui = BoardGuiTk(root, board)
     gui.pack(side="top", fill="both", expand="true", padx=4, pady=4)
     # gui.draw_pieces()
 
@@ -111,4 +111,5 @@ def display():
     root.mainloop()
 
 if __name__ == "__main__":
-    display()
+    size = 19
+    display(Board(size))
