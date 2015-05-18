@@ -1,4 +1,5 @@
 import Tkinter as tk
+import board
 
 class BoardGuiTk(tk.Frame):
 
@@ -9,10 +10,10 @@ class BoardGuiTk(tk.Frame):
         return (self.columns * self.square_size,
                 self.rows * self.square_size)
 
-    def __init__(self, parent, square_size=64, board):
+    def __init__(self, parent, board, square_size=64):
         self.board = board
-        self.rows = board.width
-        self.columns = board.width
+        self.rows = len(board.board)
+        self.columns = len(board.board)
         self.square_size = square_size
         self.parent = parent
 
@@ -41,6 +42,10 @@ class BoardGuiTk(tk.Frame):
     def click(self, event):
         pass
 
+    def place_piece(self, i, j):
+        if self.board.place_piece(i, j):
+            refresh()
+        
     def addpiece(self, name, image, row=0, column=0):
         '''Add a piece to the playing board'''
         self.canvas.create_image(0,0, image=image, tags=(name, "piece"), anchor="c")
@@ -93,4 +98,4 @@ def display(board):
 
 if __name__ == "__main__":
     size = 19
-    display(Board(size))
+    display(board.Board(size))
