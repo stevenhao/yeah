@@ -2,13 +2,13 @@ import Tkinter as tk
 from board import Board
 
 class BoardGuiTk(tk.Frame):
-    bgcolor = "yellow"
+    bgcolor = "DarkGoldenrod3"
     @property
     def canvas_size(self):
         return (self.columns * self.square_size,
                 self.rows * self.square_size)
 
-    def __init__(self, parent, board, square_size=64, min_square_size=30):
+    def __init__(self, parent, board, square_size=40):
         self.board = board
         self.rows = board.size
         self.columns = board.size
@@ -16,14 +16,13 @@ class BoardGuiTk(tk.Frame):
         self.parent = parent
         self.hover = None
 
-        self.icons = {}
+        self.star_points = self._compute_star_points()
 
-        min_canvas_width, min_canvas_height = self.rows * min_square_size, self.columns * min_square_size
         canvas_width, canvas_height = self.canvas_size
 
         tk.Frame.__init__(self, parent)
 
-        self.canvas = tk.Canvas(self, width=min_canvas_width, height=min_canvas_height, background="grey")
+        self.canvas = tk.Canvas(self, width=canvas_width, height=canvas_height, background="grey")
         self.canvas.pack(side="top", fill="both", anchor="c", expand=True)
 
         self.canvas.bind("<Configure>", self._refresh)
@@ -42,6 +41,23 @@ class BoardGuiTk(tk.Frame):
         self.button_quit.pack(side=tk.RIGHT, in_=self.statusbar)
         self.statusbar.pack(expand=False, fill="both", side='bottom')
 
+    def _compute_star_points(self):
+        size = self.board.size
+        if size == 19:
+            return [(i, j) for i in [3, 9, 15] for j in [3, 9, 15]]
+
+        corner_offset = 3 # for 19, 3
+        # for 11, 2
+
+        rows, columns = self.rows, self.columns
+        row_coordinates = [corner_offset, rows - 1 - corner_offset]
+        column_coordinates = [corner_offset, columns - 1 - corner_offset]
+        if rows % 2 == 1:
+            row_coordinates += [rows / 2]
+        if columns % 2 == 1:
+            column_coordinates += [columns / 2]
+
+        return [(i, j) for i in row_coordinates for j in column_coordinates]
 
     def _screenLoc(self, i, j):
         x = j*self.square_size + self.marginx
@@ -65,8 +81,10 @@ class BoardGuiTk(tk.Frame):
     def _mouse_click(self, event):
         i, j = self._gridLoc(event.x, event.y)
 
-        self.board.place_piece(i, j)
-        self._draw_pieces()
+        if self.board.place_piece(i, j):
+            self._draw_pieces()
+            self.hover = None
+            self._draw_hover()
         
     def _refresh(self, event={}):
         if event:
@@ -88,20 +106,39 @@ class BoardGuiTk(tk.Frame):
         self._draw_pieces()
     
     def _draw_board(self):
+
+        def draw_background():
+            margin = self.square_size / 2
+            x0, y0 = self._screenLoc(0, 0)
+            x1, y1 = self._screenLoc(self.rows - 1, self.columns - 1)
+            self.canvas.create_rectangle(x0 - margin, y0 - margin, x1 + margin, y1 + margin,
+                                         fill=self.bgcolor, width=4, tags="background", outline="black")     
+
+        def draw_grid():
+            for i in range(self.rows):
+                x0, y0 = self._screenLoc(i, 0)
+                x1, y1 = self._screenLoc(i, self.columns - 1)
+                self.canvas.create_line(x0, y0, x1, y1, tags="line")
+
+            for j in range(self.columns):
+                x0, y0 = self._screenLoc(0, j)
+                x1, y1 = self._screenLoc(self.rows - 1, j)
+                self.canvas.create_line(x0, y0, x1, y1, tags="line")
+
+        def draw_stars():
+            radius = self.square_size/10
+            for i, j in self.star_points:
+                x, y = self._screenLoc(i, j)
+                self.canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
+                                        fill="black", tags="star")
+
         self.canvas.delete("line")
         self.canvas.delete("background") 
-
-        margin = self.square_size / 2
-        x0, y0 = self._screenLoc(0, 0)
-        x1, y1 = self._screenLoc(self.rows - 1, self.columns - 1)
-        self.canvas.create_rectangle(x0 - margin, y0 - margin, x1 + margin, y1 + margin,
-                                     fill=self.bgcolor, width=0, tags="background")     
-
-        for i in range(self.rows - 1):
-            for j in range(self.columns - 1):
-                x, y = self._screenLoc(i, j)
-                self.canvas.create_rectangle(x, y, x + self.square_size, y + self.square_size, 
-                                             outline="black", tags="line", width=2)      
+        self.canvas.delete("star")
+        draw_background()
+        draw_grid()
+        draw_stars()
+        self.canvas.tag_lower("star")
         self.canvas.tag_lower("line")
         self.canvas.tag_lower("background")
 
@@ -109,12 +146,12 @@ class BoardGuiTk(tk.Frame):
     def _draw_hover(self):
         self.canvas.delete("hover")
         if self.hover:
-            radius = self.square_size/3
+            radius = max(1, self.square_size/3 - 2)
             i, j = self.hover
             x, y = self._screenLoc(i, j)
             color = "white" if self.board.turn == 1 else "black"
             self.canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
-                            tags=("hover"), fill=color)
+                            tags="hover", fill=color)
         self.canvas.tag_raise("hover")
         self.canvas.tag_raise("piece")
 
@@ -125,10 +162,9 @@ class BoardGuiTk(tk.Frame):
             for j in range(self.columns):
                 if self.board.board[i][j]:
                     x, y = self._screenLoc(i, j)
-                    color = "white" if self.board.get(i, j) == 1 else "black"
-                    outline_color = "gray"
+                    color, outline_color = ("white", "gray") if self.board.get(i, j) == 1 else ("black", "black")
                     self.canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
-                                            tags=("piece"), fill=color, outline=outline_color, width=2)
+                                            tags="piece", fill=color, outline=outline_color, width=1)
         self.canvas.tag_raise("piece")
   
 def display(board):
