@@ -139,5 +139,4 @@ def display(board):
 if __name__ == "__main__":
     size = 19
     board = board.Board(size)
-    board.place_piece(0,0)
     display(board)
