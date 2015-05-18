@@ -1,6 +1,6 @@
 class Board:
 
-    def __init__(self, size):
+    def __init__(self, size=19):
         self.size = size
         self.board = [[0 for i in range(size)] for j in range(size)]
         self.turn = 1

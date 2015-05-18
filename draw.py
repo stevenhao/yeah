@@ -1,5 +1,6 @@
 import Tkinter as tk
 from board import Board
+import thread
 
 class BoardGuiTk(tk.Frame):
     bgcolor = "DarkGoldenrod3"
@@ -177,7 +178,8 @@ def display(board):
     # root.resizable(0,0)
     root.mainloop()
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     size = 19
     board = Board(size)
     display(board)
