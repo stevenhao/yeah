@@ -65,6 +65,10 @@ class GoServer:
             elif data.startswith('PASSTURN'):
                 if self.board.pass_turn():
                     self.send_all('PASSEDTURN' + '\n')
+                    if self.board.gameover:
+                        self.send_all('GAMEOVER' + '\n')
+                        break
+
     def send(self, message, player):
         self.conn[player].send(message)
 

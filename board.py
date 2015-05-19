@@ -4,6 +4,8 @@ class Board:
         self.size = size
         self.board = [[0 for i in range(size)] for j in range(size)]
         self.turn = 2
+        self.passed_last_turn = False
+        self.gameover = False
 
     def get(self, i, j):
         return self.board[i][j]
@@ -15,10 +17,20 @@ class Board:
         self.turn = 2 if self.turn == 1 else 1
 
     def pass_turn(self):
+        if self.gameover:
+            return False
+
         self._next_turn()
+
+        if self.passed_last_turn:
+            self.gameover = True
+        self.passed_last_turn = True
         return True
 
     def place_piece(self, i, j):
+        if self.gameover:
+            return False
+
         board = self.board
         if not self.in_bounds(i, j):
             return False
@@ -29,6 +41,8 @@ class Board:
 
         self._elim_pieces(i, j)
         self._next_turn()
+
+        self.passed_last_turn = False
         return True
 
     def _elim_pieces(self, i, j):
