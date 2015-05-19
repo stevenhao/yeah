@@ -13,9 +13,6 @@ class Board:
     def in_bounds(self, i, j):
         return 0 <= i < self.size and 0 <= j < self.size
 
-    def _next_turn(self):
-        self.turn = 2 if self.turn == 1 else 1
-
     def pass_turn(self):
         if self.gameover:
             return False
@@ -104,7 +101,8 @@ class Board:
         else:
             return False
 
-
+    def _next_turn(self):
+        self.turn = 2 if self.turn == 1 else 1
 
 
 
