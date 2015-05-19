@@ -11,6 +11,13 @@ class Board:
     def in_bounds(self, i, j):
         return 0 <= i < self.size and 0 <= j < self.size
 
+    def _next_turn(self):
+        self.turn = 2 if self.turn == 1 else 1
+
+    def pass_turn(self):
+        self._next_turn()
+        return True
+
     def place_piece(self, i, j):
         board = self.board
         if not self.in_bounds(i, j):
@@ -21,7 +28,7 @@ class Board:
         board[i][j] = self.turn
 
         self._elim_pieces(i, j)
-        self.turn = 2 if self.turn == 1 else 1
+        self._next_turn()
         return True
 
     def _elim_pieces(self, i, j):
