@@ -25,6 +25,67 @@ class Board:
     def add_state(self, hash_value):
         self.prev_states[hash_value] = True
 
+    def score(self):
+        board = self.board
+        size = self.size
+
+        scores = [0,0]
+        checked = [[False for i in range(size)] for j in range(size)]
+        for i in range(size):
+            for j in range(size):
+                if checked[i][j]:
+                    continue
+
+                if board[i][j] > 0:
+                    checked[i][j] = True
+                    scores[board[i][j] - 1] += 1
+                    continue
+
+                num_pieces, player = self._score_empty_group(checked, i, j)
+
+                if 1 <= player <= 2:
+                    scores[player - 1] += num_pieces
+        return scores
+
+    '''
+        Returns a tuple of size 2:
+        The first element is the number of points in the group of empty spaces
+        The second element is -1 if the group is adjacent to only checked locations and board edges
+        The second element is 0 if the group is adjacent to both players
+        Otherwise, the second element is the player num of the adjacent player
+    '''
+    def _score_empty_group(self, checked, i, j):
+        if not self.in_bounds(i, j):
+            return (0, -1)
+
+        if self.board[i][j]:
+            return (0, self.board[i][j])
+
+        if checked[i][j]:
+            return (0, -1)
+
+        checked[i][j] = True
+        
+        state = -1
+        count = 1
+        for di, dj in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            new_i, new_j = (i + di, j + dj)
+            new_count, new_state = self._score_empty_group(checked, new_i, new_j)
+            count += new_count
+            if new_state == -1 or state == 0:
+                continue
+            elif new_state == 0:
+                state = 0
+            elif state == -1:
+                state = new_state
+            elif state != new_state:
+                state = 0
+            else:
+                continue
+
+        return (count, state)
+
+
     def get(self, i, j):
         return self.board[i][j]
 
@@ -192,3 +253,12 @@ class Board:
 
     def _next_turn(self):
         self.turn = 2 if self.turn == 1 else 1
+
+
+
+
+
+
+
+
+
