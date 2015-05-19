@@ -31,7 +31,7 @@ class GoClient:
         self.make_display()
 
     def make_display(self):
-        self.root.title('Python Go')
+        self.root.title('Python Online Go')
 
         self.gui = BoardGui(parent=self.root, board=self.board, players=self.players)
         self.gui.on_click.append(self.on_click)

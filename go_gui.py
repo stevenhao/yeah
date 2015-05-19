@@ -10,6 +10,7 @@ class BoardGui(tk.Frame):
                 self.rows * self.square_size)
 
     def made_move(self):
+        self.hover = None
         self._refresh()
 
     def __init__(self, parent, board, players, square_size=40):
@@ -189,4 +190,18 @@ class BoardGui(tk.Frame):
                                             tags='piece', fill=color, outline=outline_color, width=1)
         self.canvas.tag_raise('piece')
   
+if __name__ == '__main__':
+    board = Board()
+    root = tk.Tk()
+    root.title('Python Offline Go')
+
+    gui = BoardGui(parent=root, board=board, players=[1, 2])
+    def on_click(i, j):
+         board.place_piece(i, j)
+         gui.made_move()
+    gui.on_click.append(on_click)
+    gui.pack(side='top', fill='both', expand='true', padx=4, pady=4)
+
+    # root.resizable(0,0)
+    root.mainloop()
 
