@@ -11,6 +11,7 @@ class BoardGui(tk.Frame):
 
     def made_move(self):
         self.hover = None
+        print 'refreshing'
         self._refresh()
 
     def __init__(self, parent, board, players, square_size=40):
@@ -165,9 +166,9 @@ class BoardGui(tk.Frame):
 
 
     def _draw_hover(self):
-        if self.board.turn not in self.players:
-            return
         self.canvas.delete('hover')
+        if self.board.turn not in self.players:
+            self.hover = None
         if self.hover:
             radius = max(1, self.square_size/3 - 2)
             i, j = self.hover

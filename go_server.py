@@ -40,7 +40,8 @@ class GoServer:
     def terminate(self):
         self.s.close()
         for conn in self.conn:
-            conn.close()
+            if conn:
+                conn.close()
 
     def run_game(self):
         for i in range(2):
@@ -67,7 +68,7 @@ class GoServer:
                     if self.board.gameover:
                         self.send_all('GAMEOVER' + '\n')
                         break
-                        
+
     def send(self, message, player):
         self.conn[player].send(message)
 
@@ -83,7 +84,7 @@ class GoServer:
 
 
 
-server = GoServer()
+server = GoServer(IP='18.111.55.149')
 try:
     server.receive_players()
     server.run_game()
