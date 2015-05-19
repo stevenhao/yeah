@@ -8,6 +8,9 @@ class Board:
     def get(self, i, j):
         return self.board[i][j]
 
+    def valid_move(self, i, j):
+        return self.board.in_bounds(i, j) and not self.board.get(i, j):
+
     def in_bounds(self, i, j):
         return 0 <= i < self.size and 0 <= j < self.size
 

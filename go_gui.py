@@ -1,21 +1,27 @@
 import Tkinter as tk
-from board import Board
+from go_board import Board
 import thread
 
-class BoardGuiTk(tk.Frame):
-    bgcolor = "DarkGoldenrod3"
+class BoardGui(tk.Frame):
+    bgcolor = 'DarkGoldenrod3'
     @property
     def canvas_size(self):
         return (self.columns * self.square_size,
                 self.rows * self.square_size)
 
-    def __init__(self, parent, board, square_size=40):
+    def made_move(self):
+        self._refresh()
+
+    def __init__(self, parent, board, players, square_size=40):
         self.board = board
         self.rows = board.size
         self.columns = board.size
         self.square_size = square_size
         self.parent = parent
+        self.players = players
+
         self.hover = None
+        self.on_click = []
 
         self.star_points = self._compute_star_points()
 
@@ -23,26 +29,26 @@ class BoardGuiTk(tk.Frame):
 
         tk.Frame.__init__(self, parent)
 
-        self.canvas = tk.Canvas(self, width=canvas_width, height=canvas_height, background="grey")
-        self.canvas.pack(side="top", fill="both", anchor="c", expand=True)
+        self.canvas = tk.Canvas(self, width=canvas_width, height=canvas_height, background='grey')
+        self.canvas.pack(side='top', fill='both', anchor='c', expand=True)
 
-        self.canvas.bind("<Configure>", self._refresh)
-        self.canvas.bind("<Button-1>", self._mouse_click)
-        self.canvas.bind("<Motion>", self._mouse_move)
-        self.canvas.bind("<Enter>", self._mouse_enter)
-        self.canvas.bind("<Leave>", self._mouse_leave)
+        self.canvas.bind('<Configure>', self._refresh)
+        self.canvas.bind('<Button-1>', self._mouse_click)
+        self.canvas.bind('<Motion>', self._mouse_move)
+        self.canvas.bind('<Enter>', self._mouse_enter)
+        self.canvas.bind('<Leave>', self._mouse_leave)
 
         self.statusbar = tk.Frame(self, height=64)
 
-        self.button_save = tk.Button(self.statusbar, text="Save", fg="black", command=self._refresh)
+        self.button_save = tk.Button(self.statusbar, text='Save', fg='black', command=self._refresh)
         self.button_save.pack(side=tk.LEFT, in_=self.statusbar)
 
-        self.label_status = tk.Label(self.statusbar, text="   White's turn  ", fg="black")
+        self.label_status = tk.Label(self.statusbar, text="   White's turn  ", fg='black')
         self.label_status.pack(side=tk.LEFT, expand=0, in_=self.statusbar)
 
-        self.button_quit = tk.Button(self.statusbar, text="Quit", fg="black", command=self.parent.destroy)
+        self.button_quit = tk.Button(self.statusbar, text='Quit', fg='black', command=self.parent.destroy)
         self.button_quit.pack(side=tk.RIGHT, in_=self.statusbar)
-        self.statusbar.pack(expand=False, fill="both", side='bottom')
+        self.statusbar.pack(expand=False, fill='both', side='bottom')
 
     def _mouse_leave(self, event):
         self.hover = None
@@ -66,9 +72,8 @@ class BoardGuiTk(tk.Frame):
             return
         i, j = self._gridLoc(event.x, event.y)
 
-        if self.board.place_piece(i, j):
-            self.hover = None
-            self._refresh()
+        for callback in self.on_click:
+            callback(i, j)
 
     def _compute_star_points(self):
         size = self.board.size
@@ -109,10 +114,12 @@ class BoardGuiTk(tk.Frame):
             self.marginx = (self.width - (self.rows - 1) * self.square_size) / 2
             self.marginy = (self.height - (self.columns - 1) * self.square_size) / 2  
         
-        if self.board.turn == 1:
-            self.label_status['text'] = "   White's turn  "
-        else:
-            self.label_status['text'] = "   Black's turn  "
+        
+        player_names = {1: 'White', 2: 'Black'}
+        self.label_status['text'] = (
+            '   Playing as %s' % ', '.join([player_names[p] for p in self.players]) + 
+            '   %s to Move' % player_names[self.board.turn]
+            )
 
         self._draw_board()
         self._draw_hover()
@@ -125,73 +132,61 @@ class BoardGuiTk(tk.Frame):
             x0, y0 = self._screenLoc(0, 0)
             x1, y1 = self._screenLoc(self.rows - 1, self.columns - 1)
             self.canvas.create_rectangle(x0 - margin, y0 - margin, x1 + margin, y1 + margin,
-                                         fill=self.bgcolor, width=4, tags="background", outline="black")     
+                                         fill=self.bgcolor, width=4, tags='background', outline='black')     
 
         def draw_grid():
             for i in range(self.rows):
                 x0, y0 = self._screenLoc(i, 0)
                 x1, y1 = self._screenLoc(i, self.columns - 1)
-                self.canvas.create_line(x0, y0, x1, y1, tags="line")
+                self.canvas.create_line(x0, y0, x1, y1, tags='line')
 
             for j in range(self.columns):
                 x0, y0 = self._screenLoc(0, j)
                 x1, y1 = self._screenLoc(self.rows - 1, j)
-                self.canvas.create_line(x0, y0, x1, y1, tags="line")
+                self.canvas.create_line(x0, y0, x1, y1, tags='line')
 
         def draw_stars():
             radius = self.square_size/10
             for i, j in self.star_points:
                 x, y = self._screenLoc(i, j)
                 self.canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
-                                        fill="black", tags="star")
+                                        fill='black', tags='star')
 
-        self.canvas.delete("line")
-        self.canvas.delete("background") 
-        self.canvas.delete("star")
+        self.canvas.delete('line')
+        self.canvas.delete('background') 
+        self.canvas.delete('star')
         draw_background()
         draw_grid()
         draw_stars()
-        self.canvas.tag_lower("star")
-        self.canvas.tag_lower("line")
-        self.canvas.tag_lower("background")
+        self.canvas.tag_lower('star')
+        self.canvas.tag_lower('line')
+        self.canvas.tag_lower('background')
 
 
     def _draw_hover(self):
-        self.canvas.delete("hover")
+        if self.board.turn not in self.players:
+            return
+        self.canvas.delete('hover')
         if self.hover:
             radius = max(1, self.square_size/3 - 2)
             i, j = self.hover
             x, y = self._screenLoc(i, j)
-            color = "white" if self.board.turn == 1 else "black"
+            color = 'white' if self.board.turn == 1 else 'black'
             self.canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
-                            tags="hover", fill=color)
-        self.canvas.tag_raise("hover")
-        self.canvas.tag_raise("piece")
+                            tags='hover', fill=color)
+        self.canvas.tag_raise('hover')
+        self.canvas.tag_raise('piece')
 
     def _draw_pieces(self):
-        self.canvas.delete("piece")
+        self.canvas.delete('piece')
         radius = self.square_size/3
         for i in range(self.rows):
             for j in range(self.columns):
                 if self.board.board[i][j]:
                     x, y = self._screenLoc(i, j)
-                    color, outline_color = ("white", "gray") if self.board.get(i, j) == 1 else ("black", "black")
+                    color, outline_color = ('white', 'gray') if self.board.get(i, j) == 1 else ('black', 'black')
                     self.canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
-                                            tags="piece", fill=color, outline=outline_color, width=1)
-        self.canvas.tag_raise("piece")
+                                            tags='piece', fill=color, outline=outline_color, width=1)
+        self.canvas.tag_raise('piece')
   
-def display(board):
-    root = tk.Tk()
-    root.title("Python Go")
 
-    gui = BoardGuiTk(root, board)
-    gui.pack(side="top", fill="both", expand="true", padx=4, pady=4)
-
-    # root.resizable(0,0)
-    root.mainloop()
-
-
-if __name__ == '__main__':
-    size = 19
-    board = Board(size)
-    display(board)
