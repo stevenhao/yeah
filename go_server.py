@@ -66,7 +66,13 @@ class GoServer:
                 if self.board.pass_turn():
                     self.send_all('PASSEDTURN' + '\n')
                     if self.board.gameover:
-                        self.send_all('GAMEOVER' + '\n')
+                        score1, score2 = self.board.score()
+                        if self.game_num[0] == 1:
+                            self.send('GAMEOVER ' + score1 + ' ' + score2 + '\n', 0)
+                            self.send('GAMEOVER ' + score2 + ' ' + score1 + '\n', 1)
+                        else:
+                            self.send('GAMEOVER ' + score2 + ' ' + score1 + '\n', 0)
+                            self.send('GAMEOVER ' + score1 + ' ' + score2 + '\n', 1)
                         break
 
     def send(self, message, player):
