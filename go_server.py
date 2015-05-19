@@ -1,5 +1,5 @@
 import socket
-from board import Board
+from go_board import Board
 import random, string
 
 def generate_id(N):
@@ -17,14 +17,13 @@ class GoServer:
         s.listen(1)
         self.s = s
 
-
     def receive_players(self):
-        
         self.conn = [None]*2
         self.addr = [None]*2
 
         for i in range(2):
             conn, addr = self.s.accept()
+            print 'made connection %d: %s ' % (i, addr)
             self.conn[i] = conn
             self.addr[i] = addr
 
@@ -45,7 +44,7 @@ class GoServer:
 
     def run_game(self):
         for i in range(2):
-            self.send("BEGINGAME " + str(self.game_num[i])+ "\n", i)
+            self.send('BEGINGAME ' + str(self.game_num[i])+ '\n', i)
         
         while True:
             curr_player = self.board.turn
@@ -68,7 +67,7 @@ class GoServer:
                     if self.board.gameover:
                         self.send_all('GAMEOVER' + '\n')
                         break
-
+                        
     def send(self, message, player):
         self.conn[player].send(message)
 
@@ -84,7 +83,10 @@ class GoServer:
 
 
 
-server = GoServer(port=5005)
-server.receive_players()
-server.run_game()
-server.terminate()
+server = GoServer()
+try:
+    server.receive_players()
+    server.run_game()
+except:
+    print 'broke oops'
+    server.terminate()

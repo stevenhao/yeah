@@ -10,6 +10,9 @@ class Board:
     def get(self, i, j):
         return self.board[i][j]
 
+    def valid_move(self, i, j):
+        return self.in_bounds(i, j) and not self.get(i, j)
+
     def in_bounds(self, i, j):
         return 0 <= i < self.size and 0 <= j < self.size
 
@@ -29,10 +32,8 @@ class Board:
             return False
 
         board = self.board
-        if not self.in_bounds(i, j):
-            return False
-        if board[i][j] != 0:
-            return False
+        if not self.valid_move(i, j):
+            return
 
         board[i][j] = self.turn
 
@@ -60,9 +61,7 @@ class Board:
         check_squares = [(0,1), (0,-1), (-1, 0), (1, 0)] if check_adj else [(0,0)]
         for di,dj in check_squares:
             i,j = (i0+di, j0+dj)
-            if not (0 <= i < self.size) or not (0 <= j < self.size):
-                continue
-            if checked[i][j]:
+            if not self.in_bounds(i, j) or checked[i][j]:
                 continue
             if board[i][j] != player:
                 checked[i][j] = True
