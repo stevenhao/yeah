@@ -11,7 +11,7 @@ class Board:
         return self.board[i][j]
 
     def valid_move(self, i, j):
-        return self.in_bounds(i, j) and not self.get(i, j)
+        return self.in_bounds(i, j) and not self.get(i, j) and self._check_suicides(i, j)
 
     def in_bounds(self, i, j):
         return 0 <= i < self.size and 0 <= j < self.size
@@ -33,7 +33,7 @@ class Board:
 
         board = self.board
         if not self.valid_move(i, j):
-            return
+            return False
 
         board[i][j] = self.turn
 
@@ -45,13 +45,25 @@ class Board:
 
     def _elim_pieces(self, i, j):
         if self.turn == 1:
-            self._elim_pieces_player(2, i, j, True)
-            self._elim_pieces_player(1, i, j, False)
+            self._elim_pieces_player(2, i, j, True, elim=True)
         else:
-            self._elim_pieces_player(1, i, j, True)
-            self._elim_pieces_player(2, i, j, False)
+            self._elim_pieces_player(1, i, j, True, elim=True)
 
-    def _elim_pieces_player(self, player, i0, j0, check_adj):
+    def _check_suicides(self, i, j):
+        if self.turn == 1:
+            first, second = (1, 2)
+        else:
+            first, second = (2, 1)
+
+        self.board[i][j] = first
+        if not self._elim_pieces_player(second, i, j, True, elim=False): # checks if can eliminate opponent's piece
+            self.board[i][j] = 0
+            return True
+        success = self._elim_pieces_player(first, i, j, False, elim=False) # checks if can eliminate one's own piece
+        self.board[i][j] = 0
+        return success
+
+    def _elim_pieces_player(self, player, i0, j0, check_adj, elim=True):
         board = self.board
         width = len(board)
 
@@ -70,8 +82,11 @@ class Board:
             newly_checked = []
             if not self._elim_pieces_floodfill(i, j, checked, player, False, newly_checked):
                 to_eliminate.extend(newly_checked)
-        for i, j in to_eliminate:
-            board[i][j] = 0
+        if elim:
+            for i, j in to_eliminate:
+                board[i][j] = 0
+        else:
+            return len(to_eliminate) == 0
 
     def _elim_pieces_floodfill(self, i, j, checked, player, has_liberty, newly_checked):
         board = self.board
@@ -102,6 +117,4 @@ class Board:
 
     def _next_turn(self):
         self.turn = 2 if self.turn == 1 else 1
-
-
 
