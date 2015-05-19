@@ -5,8 +5,10 @@ from go_gui import BoardGui
 
 class GoClient:
 
-    def __init__(self):
+    def __init__(self, IP='127.0.0.1', port=5005):
         self.root = tk.Tk()
+        self.IP = IP
+        self.port = port
         self.board = Board()
         self.players = []
 
@@ -55,12 +57,10 @@ class GoClient:
         self.skt.send(data)
 
     def connect_to_server(self):
-        TCP_IP = '127.0.0.1'
-        TCP_PORT = 5005
         BUFFER_SIZE = 1024
 
         self.skt = Socket(AF_INET, SOCK_STREAM)
-        self.skt.connect((TCP_IP, TCP_PORT))
+        self.skt.connect((self.IP, self.port))
         self.skt.setblocking(0)
         def listen():
             try:
@@ -75,5 +75,5 @@ class GoClient:
 
 
 if __name__ == '__main__':
-    client = GoClient()
+    client = GoClient(IP='18.111.55.149')
     client.run()
