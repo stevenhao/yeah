@@ -77,7 +77,10 @@ class GoServer:
 
 
 
-server = GoServer(port=5005)
-server.receive_players()
-server.run_game()
-server.terminate()
+server = GoServer()
+try:
+    server.receive_players()
+    server.run_game()
+except:
+    print 'broke oops'
+    server.terminate()

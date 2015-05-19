@@ -3,13 +3,11 @@ import Tkinter as tk
 from go_board import Board
 from go_gui import BoardGui
 
-size = 19
-
 class GoClient:
 
     def __init__(self):
         self.root = tk.Tk()
-        self.board = Board(size)
+        self.board = Board()
         self.players = []
 
     def start_game(self, player):

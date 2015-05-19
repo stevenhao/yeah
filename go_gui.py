@@ -61,7 +61,7 @@ class BoardGui(tk.Frame):
     def _mouse_move(self, event):
         i, j = self._gridLoc(event.x, event.y)
 
-        if self.board.in_bounds(i, j) and not self.board.get(i, j):
+        if self.board.valid_move(i, j):
             self.hover = i, j
         else:
             self.hover = None
