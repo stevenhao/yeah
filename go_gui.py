@@ -14,6 +14,13 @@ class BoardGui(tk.Frame):
         print 'refreshing'
         self._refresh()
 
+    def passed_turn(self):
+        self.hover = None
+        self._refresh()
+
+    def set_message(self, message):
+        self.label_message['text'] = message
+
     def __init__(self, parent, board, players, square_size=40):
         self.board = board
         self.rows = board.size
@@ -24,6 +31,7 @@ class BoardGui(tk.Frame):
 
         self.hover = None
         self.on_click = []
+        self.on_pass = []
 
         self.star_points = self._compute_star_points()
 
@@ -42,14 +50,19 @@ class BoardGui(tk.Frame):
 
         self.statusbar = tk.Frame(self, height=64)
 
-        self.button_save = tk.Button(self.statusbar, text='Save', fg='black', command=self._refresh)
-        self.button_save.pack(side=tk.LEFT, in_=self.statusbar)
-
-        self.label_status = tk.Label(self.statusbar, text="   White's turn  ", fg='black')
+        self.label_status = tk.Label(self.statusbar, fg='black')
         self.label_status.pack(side=tk.LEFT, expand=0, in_=self.statusbar)
 
         self.button_quit = tk.Button(self.statusbar, text='Quit', fg='black', command=self.parent.destroy)
         self.button_quit.pack(side=tk.RIGHT, in_=self.statusbar)
+
+        self.button_pass = tk.Button(self.statusbar, text='Pass', fg='black', command=self._pass_turn)
+        self.button_pass.pack(side=tk.RIGHT, in_=self.statusbar)
+
+        self.label_message = tk.Label(self.statusbar, text='Hi', fg='black')
+        self.label_message.pack(side=tk.RIGHT, in_=self.statusbar)
+
+
         self.statusbar.pack(expand=False, fill='both', side='bottom')
 
     def _mouse_leave(self, event):
@@ -77,12 +90,16 @@ class BoardGui(tk.Frame):
         for callback in self.on_click:
             callback(i, j)
 
+    def _pass_turn(self):
+        for callback in self.on_pass:
+            callback()
+
     def _compute_star_points(self):
         size = self.board.size
         if size == 19:
             return [(i, j) for i in [3, 9, 15] for j in [3, 9, 15]]
 
-        corner_offset = 3
+        corner_offset = 2
 
         rows, columns = self.rows, self.columns
         row_coordinates = [corner_offset, rows - 1 - corner_offset]
@@ -119,8 +136,8 @@ class BoardGui(tk.Frame):
         
         player_names = {1: 'White', 2: 'Black'}
         self.label_status['text'] = (
-            '   Playing as %s' % ', '.join([player_names[p] for p in self.players]) + 
-            '   %s to Move' % player_names[self.board.turn]
+            'Playing as %s' % ' and '.join([player_names[p] for p in self.players]) + 
+            ', %s to Move' % player_names[self.board.turn]
             )
 
         self._draw_board()
@@ -192,7 +209,7 @@ class BoardGui(tk.Frame):
         self.canvas.tag_raise('piece')
   
 if __name__ == '__main__':
-    board = Board()
+    board = Board(9)
     root = tk.Tk()
     root.title('Python Offline Go')
 
@@ -200,7 +217,11 @@ if __name__ == '__main__':
     def on_click(i, j):
          board.place_piece(i, j)
          gui.made_move()
+    def on_pass():
+        board.pass_turn()
+        gui.passed_turn()
     gui.on_click.append(on_click)
+    gui.on_pass.append(on_pass)
     gui.pack(side='top', fill='both', expand='true', padx=4, pady=4)
 
     # root.resizable(0,0)
