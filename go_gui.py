@@ -1,13 +1,13 @@
 import Tkinter as tk
+from math import sqrt
 from go_board import Board
 import thread
 
 class BoardGui(tk.Frame):
     bgcolor = 'DarkGoldenrod3'
-    @property
-    def canvas_size(self):
-        return (self.columns * self.square_size,
-                self.rows * self.square_size)
+
+    def start_game(self):
+        self._refresh()
 
     def made_move(self):
         self.hover = None
@@ -21,21 +21,22 @@ class BoardGui(tk.Frame):
     def set_message(self, message):
         self.label_message['text'] = message
 
-    def __init__(self, parent, board, players, square_size=40):
+    def __init__(self, parent, board, players):
         self.board = board
         self.rows = board.size
         self.columns = board.size
-        self.square_size = square_size
+        self.square_size = 20
         self.parent = parent
         self.players = players
-
+        self.marginx = 0
+        self.marginy = 0
         self.hover = None
         self.on_click = []
         self.on_pass = []
 
         self.star_points = self._compute_star_points()
 
-        canvas_width, canvas_height = self.canvas_size
+        canvas_width, canvas_height = 600, 600
 
         tk.Frame.__init__(self, parent)
 
@@ -99,7 +100,7 @@ class BoardGui(tk.Frame):
         if size == 19:
             return [(i, j) for i in [3, 9, 15] for j in [3, 9, 15]]
 
-        corner_offset = 2
+        corner_offset = int(sqrt(size) - 1)
 
         rows, columns = self.rows, self.columns
         row_coordinates = [corner_offset, rows - 1 - corner_offset]
@@ -216,7 +217,7 @@ class BoardGui(tk.Frame):
         self.canvas.tag_raise('piece')
         self.canvas.tag_raise('cross')
 if __name__ == '__main__':
-    board = Board(9)
+    board = Board(19)
     root = tk.Tk()
     root.title('Python Offline Go')
 

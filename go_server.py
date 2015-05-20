@@ -1,3 +1,4 @@
+from sys import argv
 import socket
 from go_board import Board
 import random, string
@@ -7,14 +8,15 @@ def generate_id(N):
 
 class GoServer:
 
-    def __init__(self, IP='127.0.0.1', port=5005, BUFFER_SIZE=1024):
+    def __init__(self, IP='127.0.0.1', port=5005, BUFFER_SIZE=1024, size=19):
         self.TCP_IP = IP
         self.TCP_PORT = port
         self.BUFFER_SIZE = BUFFER_SIZE
-        self.board = Board()
+        self.board = Board(size)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind((self.TCP_IP, self.TCP_PORT))
         s.listen(1)
+        self.size = size
         self.s = s
 
     def receive_players(self):
@@ -38,19 +40,26 @@ class GoServer:
         self.conn_num[2] = 1 if first_player_num == 1 else 0
 
     def terminate(self):
+        print 'closing connection'
+        self.s.shutdown(socket.SHUT_RDWR)
         self.s.close()
+        print 'connection closed'
         for conn in self.conn:
             if conn:
                 conn.close()
 
     def run_game(self):
         for i in range(2):
-            self.send('BEGINGAME ' + str(self.game_num[i])+ '\n', i)
+            self.send('BEGINGAME %d %d\n' % (self.game_num[i], self.size), i)
         
         while True:
             curr_player = self.board.turn
             curr_conn_num = self.conn_num[curr_player]
             data = self.conn[curr_conn_num].recv(self.BUFFER_SIZE)
+            if not data:
+                break
+
+            print 'received %s from %s' % (data, self.addr[curr_conn_num])
             if data.startswith('MAKEMOVE'):
                 tokens = data.split()
                 if len(tokens) == 3:
@@ -66,14 +75,15 @@ class GoServer:
                 if self.board.pass_turn():
                     self.send_all('PASSEDTURN' + '\n')
                     if self.board.gameover:
-                        score1, score2 = self.board.score()
-                        if self.game_num[0] == 1:
-                            self.send('GAMEOVER ' + score1 + ' ' + score2 + '\n', 0)
-                            self.send('GAMEOVER ' + score2 + ' ' + score1 + '\n', 1)
-                        else:
-                            self.send('GAMEOVER ' + score2 + ' ' + score1 + '\n', 0)
-                            self.send('GAMEOVER ' + score1 + ' ' + score2 + '\n', 1)
+                        score_white, score_black = self.board.score()
+                        self.send_all('GAMEOVER %d %d \n' % (score_black, score_white))
                         break
+            elif data.startswith('QUIT'):
+                self.board.gameover = True
+                score_white, score_black = self.board.score()
+                self.send_all('GAMEOVER %d %d \n' % (score_black, score_white))
+                break
+        print 'done serving'
 
     def send(self, message, player):
         self.conn[player].send(message)
@@ -84,16 +94,27 @@ class GoServer:
 
 
             
+if __name__ == '__main__':
+    IP = '18.111.55.149'
+    port = 5005
+    size = 19
+    if len(argv) >= 2:
+        port = int(argv[1])
+    if len(argv) == 3:
+        try:
+            size = int(argv[2])
+        except ValueError:
+            IP = argv[2]
+    if len(argv) >= 4:
+        IP = argv[2]
+        size = int(argv[3])
 
-
-
-
-
-
-server = GoServer(IP='18.111.55.149')
-try:
-    server.receive_players()
-    server.run_game()
-except:
-    print 'broke oops'
-    server.terminate()
+    print 'serving on %s, port %d, size %d' % (IP, port, size)
+    server = GoServer(IP=IP, port=port, size=size)
+    try:
+        server.receive_players()
+        server.run_game()
+    except Exception, err:
+        print Exception, err
+        print 'broke oops'
+        server.terminate()

@@ -95,6 +95,8 @@ class Board:
         Returns 0 otherwise
     '''
     def valid_move(self, i, j):
+        if self.gameover:
+            return False
         if self.in_bounds(i, j) and not self.get(i, j):
             hash_value = self._check_suicides_and_ko(i, j)
             if hash_value:
