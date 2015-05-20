@@ -195,19 +195,26 @@ class BoardGui(tk.Frame):
                             tags='hover', fill=color)
         self.canvas.tag_raise('hover')
         self.canvas.tag_raise('piece')
+        self.canvas.tag_raise('cross')
 
     def _draw_pieces(self):
         self.canvas.delete('piece')
+        self.canvas.delete('cross')
         radius = self.square_size/3
         for i in range(self.rows):
             for j in range(self.columns):
                 if self.board.board[i][j]:
                     x, y = self._screenLoc(i, j)
-                    color, outline_color = ('white', 'gray') if self.board.get(i, j) == 1 else ('black', 'black')
+                    color, outline_color = ('white', 'white') if self.board.get(i, j) == 1 else ('black', 'black')
+                    if self.board.last_move and self.board.last_move == (i, j):
+                        cross_size = radius/2
+                        cross_color = 'black' if self.board.board[i][j] == 1 else 'white'
+                        self.canvas.create_line(x - cross_size, y, x + cross_size, y, tags='cross', fill=cross_color)
+                        self.canvas.create_line(x, y - cross_size, x, y + cross_size, tags='cross', fill=cross_color)
                     self.canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
                                             tags='piece', fill=color, outline=outline_color, width=1)
         self.canvas.tag_raise('piece')
-  
+        self.canvas.tag_raise('cross')
 if __name__ == '__main__':
     board = Board(9)
     root = tk.Tk()

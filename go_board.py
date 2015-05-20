@@ -6,6 +6,7 @@ class Board:
         self.turn = 2
         self.passed_last_turn = False
         self.gameover = False
+        self.last_move = None
         self.prev_states = {}
 
     @staticmethod
@@ -129,7 +130,7 @@ class Board:
 
         self._elim_pieces(i, j)
         self._next_turn()
-
+        self.last_move = (i, j)
         self.passed_last_turn = False
         return True
 
