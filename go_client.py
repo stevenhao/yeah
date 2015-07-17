@@ -30,6 +30,7 @@ class GoClient:
     def game_over(self, score1, score2):
         self.gui.set_message('Game Over, Black: %d White: %d' % (score1, score2))
         self.board.gameover = True
+        self.board.made_move()
 
     def on_click(self, i, j):
         if self.board.turn in self.players:

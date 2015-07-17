@@ -1,5 +1,6 @@
 import Tkinter as tk
 from math import sqrt
+from sys import argv
 from go_board import Board
 import thread
 
@@ -19,7 +20,8 @@ class BoardGui(tk.Frame):
         self._refresh()
 
     def set_message(self, message):
-        self.label_message['text'] = message
+        self.label_message.config(text=message)
+        self._refresh()
 
     def __init__(self, parent, board, players):
         self.board = board
@@ -62,7 +64,6 @@ class BoardGui(tk.Frame):
 
         self.label_message = tk.Label(self.statusbar, text='Hi', fg='black')
         self.label_message.pack(side=tk.RIGHT, in_=self.statusbar)
-
 
         self.statusbar.pack(expand=False, fill='both', side='bottom')
 
@@ -217,17 +218,27 @@ class BoardGui(tk.Frame):
         self.canvas.tag_raise('piece')
         self.canvas.tag_raise('cross')
 if __name__ == '__main__':
-    board = Board(19)
     root = tk.Tk()
     root.title('Python Offline Go')
-
+    size = 19
+    if len(argv) >= 2:
+        size = int(argv[1])
+    board = Board(size)
+   
     gui = BoardGui(parent=root, board=board, players=[1, 2])
     def on_click(i, j):
-         board.place_piece(i, j)
-         gui.made_move()
+        board.place_piece(i, j)
+        gui.made_move()
+
     def on_pass():
         board.pass_turn()
         gui.passed_turn()
+        if board.gameover:
+            print 'game over.'
+            score_black, score_white = board.score()
+            gui.set_message('Black: %d White %d' % (score_black, score_white))
+        gui.made_move()
+
     gui.on_click.append(on_click)
     gui.on_pass.append(on_pass)
     gui.pack(side='top', fill='both', expand='true', padx=4, pady=4)
