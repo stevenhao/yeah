@@ -2,6 +2,12 @@ from sys import argv
 from socket import socket as Socket, AF_INET, SOCK_STREAM, error as SocketError
 from GoBot_API import GoBot
 
+import os
+
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
+
 class GoBotClient:
 
     def __init__(self, IP='127.0.0.1', port=5005):
@@ -35,7 +41,9 @@ class GoBotClient:
     def run(self):
         self.connect_to_server()
         while True:
-            self.listen()
+            if self.listen():
+                print "Disconnected from server\n"
+                return
        
     def receive(self, data):
         print 'receiving [%s]' % data
@@ -57,6 +65,8 @@ class GoBotClient:
         elif message == 'GAMEOVER':
             a, b = map(int, data[1:3])
             self.game_over(a, b)
+        elif message == 'FINISH':
+            return True
 
     def send(self, data):
         print 'sending %s' % data
@@ -80,7 +90,8 @@ class GoBotClient:
             if not data:
                 return
             for line in data.split('\n'):
-                self.receive(line)
+                if self.receive(line):
+                    return True
 
 
 if __name__ == '__main__':

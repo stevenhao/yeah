@@ -3,6 +3,7 @@ from socket import socket as Socket, AF_INET, SOCK_STREAM, error as SocketError
 import Tkinter as tk
 from go_board import Board
 from go_gui import BoardGui
+import sys
 
 class GoClient:
 
@@ -76,6 +77,8 @@ class GoClient:
         elif message == 'GAMEOVER':
             a, b = map(int, data[1:3])
             self.game_over(a, b)
+        elif message == 'FINISH':
+            return True
 
     def send(self, data):
         print 'sending %s' % data
@@ -96,7 +99,10 @@ class GoClient:
                 if not data:
                     return
                 for line in data.split('\n'):
-                    self.receive(line)
+                    if self.receive(line):
+                        print "Disconnected from server."
+                        sys.exit(0)
+
             self.root.after(500, listen)
 
         listen()

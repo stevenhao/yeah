@@ -2,13 +2,20 @@ from sys import argv
 import socket
 from go_board import Board
 import random, string
+import datetime
+
+import os
+
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
 
 def generate_id(N):
     return ''.join(random.choice(string.letters) for i in xrange(N))
 
 class GoServer:
 
-    def __init__(self, IP='127.0.0.1', port=5005, BUFFER_SIZE=1024, size=19):
+    def __init__(self, IP='127.0.0.1', port=5005, BUFFER_SIZE=1024, size=19, output_file='log.sgf'):
         self.TCP_IP = IP
         self.TCP_PORT = port
         self.BUFFER_SIZE = BUFFER_SIZE
@@ -18,6 +25,7 @@ class GoServer:
         s.listen(1)
         self.size = size
         self.s = s
+        self.output_file = output_file
 
     def receive_players(self):
         self.conn = [None]*2
@@ -49,13 +57,15 @@ class GoServer:
                 conn.close()
 
     def log(self, s):
-        with open("log.txt", "a") as f:
+        with open(self.output_file, "a") as f:
             f.write(s)
 
     def run_game(self):
         for i in range(2):
             self.send('BEGINGAME %d %d\n' % (self.game_num[i], self.size), i)
         
+        self.log('(;FF[4]GM[1]SZ[19]\n\nHA[0]\nKM[6.5]\nDT['+str(datetime.date.today())+']\nRU[Japanese]\n\n')
+
         while True:
             curr_player = self.board.turn
             curr_conn_num = self.conn_num[curr_player]
@@ -74,7 +84,7 @@ class GoServer:
                         continue
 
                     if self.board.place_piece(i, j):
-                        move = "%s%s \n" % (chr(ord('A')+i), str(j))
+                        move = ";%s[%s%s]" % (('B' if curr_player == 2 else 'W'), chr(ord('a')+j), chr(ord('a')+i))
                         self.log(move)
                         self.send_all('MADEMOVE ' + str(i) + ' ' + str(j) + '\n')
             elif data.startswith('PASSTURN'):
@@ -89,6 +99,9 @@ class GoServer:
                 score_white, score_black = self.board.score()
                 self.send_all('GAMEOVER %d %d \n' % (score_black, score_white))
                 break
+
+        self.log(')\n')
+        self.send_all('FINISH\n')
         print 'done serving'
 
     def send(self, message, player):
@@ -115,8 +128,17 @@ if __name__ == '__main__':
         IP = argv[2]
         size = int(argv[3])
 
+    now = str(datetime.datetime.utcnow())
+    output_file = 'logs/'+now[:10]+'-'+now[11:13]+'-'+now[14:16]+'-'+now[17:19]+'.sgf'
+
+    if '-o' in argv:
+        output_file = argv[argv.index('-o') + 1]
+    else:
+        if not os.path.exists('logs'):
+            os.makedirs('logs')
+
     print 'serving on %s, port %d, size %d' % (IP, port, size)
-    server = GoServer(IP=IP, port=port, size=size)
+    server = GoServer(IP=IP, port=port, size=size, output_file=output_file)
     try:
         server.receive_players()
         server.run_game()
