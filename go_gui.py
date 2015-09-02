@@ -1,5 +1,6 @@
 import Tkinter as tk
 from math import sqrt
+from sys import argv
 from go_board import Board
 import thread
 
@@ -19,7 +20,8 @@ class BoardGui(tk.Frame):
         self._refresh()
 
     def set_message(self, message):
-        self.label_message['text'] = message
+        self.label_message.config(text=message)
+        self._refresh()
 
     def __init__(self, parent, board, players):
         self.board = board
@@ -62,7 +64,6 @@ class BoardGui(tk.Frame):
 
         self.label_message = tk.Label(self.statusbar, text='Hi', fg='black')
         self.label_message.pack(side=tk.RIGHT, in_=self.statusbar)
-
 
         self.statusbar.pack(expand=False, fill='both', side='bottom')
 
@@ -148,11 +149,32 @@ class BoardGui(tk.Frame):
     def _draw_board(self):
 
         def draw_background():
-            margin = self.square_size / 2
+            margin = self.square_size
             x0, y0 = self._screenLoc(0, 0)
             x1, y1 = self._screenLoc(self.rows - 1, self.columns - 1)
             self.canvas.create_rectangle(x0 - margin, y0 - margin, x1 + margin, y1 + margin,
                                          fill=self.bgcolor, width=4, tags='background', outline='black')     
+
+        def draw_labels():
+            letter = None
+            for i in range(self.rows)[::-1]:
+                x, y = self._screenLoc(i, -0.5)
+                canvas_id = self.canvas.create_text(x, y, tags='labels')
+
+                if not letter:
+                    letter = 'A'
+                elif letter == 'H':
+                    letter = 'J'
+                else:
+                    letter = chr(ord(letter)+1)
+
+                self.canvas.itemconfig(canvas_id, text=letter)
+
+            for j in range(self.columns):
+                x, y = self._screenLoc(-0.5, j)
+                canvas_id = self.canvas.create_text(x, y, tags='labels')
+
+                self.canvas.itemconfig(canvas_id, text=str(j+1))
 
         def draw_grid():
             for i in range(self.rows):
@@ -175,9 +197,11 @@ class BoardGui(tk.Frame):
         self.canvas.delete('line')
         self.canvas.delete('background') 
         self.canvas.delete('star')
+        self.canvas.delete('labels')
         draw_background()
         draw_grid()
         draw_stars()
+        draw_labels()
         self.canvas.tag_lower('star')
         self.canvas.tag_lower('line')
         self.canvas.tag_lower('background')
@@ -217,17 +241,27 @@ class BoardGui(tk.Frame):
         self.canvas.tag_raise('piece')
         self.canvas.tag_raise('cross')
 if __name__ == '__main__':
-    board = Board(19)
     root = tk.Tk()
     root.title('Python Offline Go')
-
+    size = 19
+    if len(argv) >= 2:
+        size = int(argv[1])
+    board = Board(size)
+   
     gui = BoardGui(parent=root, board=board, players=[1, 2])
     def on_click(i, j):
-         board.place_piece(i, j)
-         gui.made_move()
+        board.place_piece(i, j)
+        gui.made_move()
+
     def on_pass():
         board.pass_turn()
         gui.passed_turn()
+        if board.gameover:
+            print 'game over.'
+            score_black, score_white = board.score()
+            gui.set_message('Black: %d White %d' % (score_black, score_white))
+        gui.made_move()
+
     gui.on_click.append(on_click)
     gui.on_pass.append(on_pass)
     gui.pack(side='top', fill='both', expand='true', padx=4, pady=4)

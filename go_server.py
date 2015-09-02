@@ -48,6 +48,10 @@ class GoServer:
             if conn:
                 conn.close()
 
+    def log(self, s):
+        with open("log.txt", "a") as f:
+            f.write(s)
+
     def run_game(self):
         for i in range(2):
             self.send('BEGINGAME %d %d\n' % (self.game_num[i], self.size), i)
@@ -70,6 +74,8 @@ class GoServer:
                         continue
 
                     if self.board.place_piece(i, j):
+                        move = "%s%s \n" % (chr(ord('A')+i), str(j))
+                        self.log(move)
                         self.send_all('MADEMOVE ' + str(i) + ' ' + str(j) + '\n')
             elif data.startswith('PASSTURN'):
                 if self.board.pass_turn():
